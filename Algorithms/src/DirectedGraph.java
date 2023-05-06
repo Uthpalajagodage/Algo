@@ -7,6 +7,23 @@ public class DirectedGraph {
     private final int numVertices;
     private ArrayList<Integer>[] adjList;
 
+    public static void main(String[] args) {
+        try {
+            DirectedGraph graph = DirectedGraph.fromFile("input.txt");
+            if (graph.isAcyclic()) {
+                System.out.println("The graph is acyclic.");
+            } else {
+                System.out.println("The graph is cyclic. The cycles are:");
+                ArrayList<ArrayList<Integer>> cycles = graph.getAllCycles();
+                for (ArrayList<Integer> cycle : cycles) {
+                    System.out.println(cycle);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Input file not found.");
+        }
+    }
+
     public DirectedGraph(int numVertices) {
         this.numVertices = numVertices;
         adjList = new ArrayList[numVertices];
@@ -23,25 +40,23 @@ public class DirectedGraph {
         boolean[] visited = new boolean[numVertices];
         boolean[] recStack = new boolean[numVertices];
         ArrayList<Integer> sinks = new ArrayList<Integer>();
+        ArrayList<ArrayList<Integer>> cycles = new ArrayList<ArrayList<Integer>>();
         for (int i = 0; i < numVertices; i++) {
             if (!visited[i]) {
-                if (dfs(i, visited, recStack, sinks)) {
-                    return false;
-                }
+                dfs(i, visited, recStack, sinks, cycles);
             }
         }
-        return true;
+        return cycles.isEmpty();
     }
 
-    private boolean dfs(int v, boolean[] visited, boolean[] recStack, ArrayList<Integer> sinks) {
+    private void dfs(int v, boolean[] visited, boolean[] recStack, ArrayList<Integer> sinks,
+                     ArrayList<ArrayList<Integer>> cycles) {
         visited[v] = true;
         recStack[v] = true;
 
         for (int neighbor : adjList[v]) {
             if (!visited[neighbor]) {
-                if (dfs(neighbor, visited, recStack, sinks)) {
-                    return true;
-                }
+                dfs(neighbor, visited, recStack, sinks, cycles);
             } else if (recStack[neighbor]) {
                 // Found a cycle
                 ArrayList<Integer> cycle = new ArrayList<Integer>();
@@ -52,8 +67,7 @@ public class DirectedGraph {
                     u = sinks.contains(u) ? u : adjList[u].get(0);
                 }
                 cycle.add(neighbor);
-                System.out.println("Cycle found: " + cycle);
-                return true;
+                cycles.add(cycle);
             }
         }
 
@@ -61,7 +75,6 @@ public class DirectedGraph {
         if (adjList[v].isEmpty()) {
             sinks.add(v);
         }
-        return false;
     }
 
     public static DirectedGraph fromFile(String fileName) throws FileNotFoundException {
@@ -84,16 +97,16 @@ public class DirectedGraph {
         return graph;
     }
 
-    public static void main(String[] args) {
-        try {
-            DirectedGraph graph = DirectedGraph.fromFile("input.txt");
-            if (graph.isAcyclic()) {
-                System.out.println("The graph is acyclic.");
-            } else {
-                System.out.println("The graph is cyclic.");
+    public ArrayList<ArrayList<Integer>> getAllCycles() {
+        ArrayList<ArrayList<Integer>> cycles = new ArrayList<ArrayList<Integer>>();
+        boolean[] visited = new boolean[numVertices];
+        boolean[] recStack = new boolean[numVertices];
+        ArrayList<Integer> sinks = new ArrayList<Integer>();
+        for (int i = 0; i < numVertices; i++) {
+            if (!visited[i]) {
+                dfs(i, visited, recStack, sinks, cycles);
             }
-        } catch (FileNotFoundException e) {
-            System.out.println("Input file not found.");
         }
+        return cycles;
     }
 }
